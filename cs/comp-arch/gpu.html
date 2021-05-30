@@ -8,7 +8,7 @@
     <body>This will be a documentation of my experience working with GPUs, 
       starting from learning CUDA.</body>
 
-    <h3>Preamble</h3>
+    <h2>Preamble</h2>
     <body>GPUs (graphic processing units) usually have many many cores and are 
     each heavily multithreaded, in-order, single-instruction issue processor. 
     Therefore, they are best for data intensive applications, preferably parallel 
@@ -21,6 +21,50 @@
     prevalent in our everyday lives, the need to train and run these models efficiently 
     increases. Fortunately enough, GPUs are quite suited for these tasks, which is one
     reason why this topic is rather important these days.</body>
+
+    <h2>CUDA</h2>
+    <body>Compute Unified Device Architecture (CUDA) is an API model developed by Nvidia 
+      that allows users to directly interact with Nvidia's GPUs. Most CUDA programmes 
+      utilize both the CPU and the GPU. In this context, CPU is called the "host", and 
+      the GPU is called the "device". The host code can be compiled with traditional compilers, 
+      but the device code cannot. We must use a special compiler for the device code, and in 
+      this case, Nvidia provides us with NVCC that can be used with Nvidia's GPUs.</body>
+
+    <h3>General Structure of CUDA Programmes</h3>
+    <ol>
+      <li>Allocate all required memory on host.</li>
+      <li>Allocate all required memory on device, transfer input data from host 
+      memory to device memory.</li>
+      <li>Kernel executed on device, transfer output data back from device memory 
+      to host memory.</li>
+      <li>Free allocated memory on device</li>
+    </ol>
+
+    <h3>CUDA in C</h3>
+
+    <h4>Some Functions and Keywords</h4>
+    <ul>
+      <li><code>__global__</code> defines a special function called "kernels", that is 
+      able to be executed a set amount of times in parallel by CUDA threads. Basically 
+      tells the compiler that the function will be executed on the device.</li>
+      <li><code>cudaMalloc(void **d_A, size_t s)</code> to allocate memory of size <code>s</code> 
+      on the device.</li>
+      <li><code>cudaFree(void *d_A)</code> to free device memory.</li>
+      <li><code>cudaMemcpy(void* dst, const void* src, size_t count, cudaMemcpyKind kind)
+        </code> to copy memory from source to destination depending on the <code>kind</code> 
+        flag. Pick from <code>cudaMemcpyHostToHost, cudaMemcpyHostToDevice,
+        cudaMemcpyDeviceToHost, cudaMemcpyDeviceToDevice, cudaMemcpyDefault</code>. The 
+        default flag requires unified virtual addressing.</li>
+    </ul>
+
+    <h4>Regular Matrix Multiplication Application</h4>
+
+    <h2>References</h2>
+    <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html">https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html</a>
+    <br>
+    <a href="https://www.tutorialspoint.com/cuda/index.htm">https://www.tutorialspoint.com/cuda/index.htm</a>
+    <br>
+    <a href="https://github.com/puttsk/cuda-tutorial">https://github.com/puttsk/cuda-tutorial</a>
 
     <hr style="height:3px;border-width:0;color:gray;background-color:black">
     <a href="../../cs">Other CS stuff</a>
