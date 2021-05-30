@@ -40,6 +40,19 @@
       <li>Free allocated memory on device</li>
     </ol>
 
+    <h3>Thread Organisation</h3>
+    <body>A function is executed by threads in the same grid. In CUDA, a grid is 
+      comprised of blocks, and a block is comprised of many threads. Both blocks 
+      and grids are 3D by nature, but one can specify the third dimension to be 1 
+      to keep it 2D. For simplicity, only consider 2D blocks and grids for now. 
+      One block consists of many different threads. If a block is 16x16 (represented as 
+      16x16x1 in CUDA), then that means there are 16 threads in each row, and 16 rows
+      in total for each block. Therefore, there are 256 threads in one block. Similarly, 
+      if a grid is 5x5, then there are 5 blocks in each row, and 5 rows in total for each 
+      block, resulting in 25 blocks in a grid. This means there are 256 * 25 threads in 
+      that particular grid. This is particularly useful to think about when running 
+      applications that works with images, or something similar.</body>
+
     <h3>CUDA in C</h3>
 
     <h4>Some Functions and Keywords</h4>
@@ -52,9 +65,17 @@
       <li><code>cudaFree(void *d_A)</code> to free device memory.</li>
       <li><code>cudaMemcpy(void* dst, const void* src, size_t count, cudaMemcpyKind kind)
         </code> to copy memory from source to destination depending on the <code>kind</code> 
-        flag. Pick from <code>cudaMemcpyHostToHost, cudaMemcpyHostToDevice,
-        cudaMemcpyDeviceToHost, cudaMemcpyDeviceToDevice, cudaMemcpyDefault</code>. The 
-        default flag requires unified virtual addressing.</li>
+        flag. The <code>kind</code> values are chosen from <code>cudaMemcpyHostToHost, 
+        cudaMemcpyHostToDevice, cudaMemcpyDeviceToHost, cudaMemcpyDeviceToDevice, 
+        cudaMemcpyDefault</code>. The default flag requires unified virtual addressing.</li>
+      <li><code>dim3 gridDim</code> contains dimensions of the grid. Access with 
+        <code>gridDim.x</code>, <code>gridDim.y</code>, <code>gridDim.z</code>.</li>
+      <li><code>uint3 blockIdx</code> contains block ID within the grid. Access with 
+        <code>blockIdx.x</code>, <code>blockIdx.y</code>, <code>blockIdx.z</code>.</li>
+      <li><code>dim3 blockDim</code> contains dimensions of the block. Access with 
+        <code>blockDim.x</code>, <code>blockDim.y</code>, <code>blockDim.z</code>.</li>
+      <li><code>uint3 threadIdx</code> contains thread index within the block. Access with 
+        <code>threadIdx.x</code>, <code>threadIdx.y</code>, <code>threadIdx.z</code>.</li>
     </ul>
 
     <h4>Regular Matrix Multiplication Application</h4>
