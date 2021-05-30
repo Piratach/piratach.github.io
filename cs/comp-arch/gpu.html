@@ -1,6 +1,7 @@
 <html>
   <head>
     <title>GPU</title>
+    <link rel="stylesheet" href="code.css">
   </head>
 
   <body>
@@ -14,7 +15,7 @@
     Therefore, they are best for data intensive applications, preferably parallel 
     ones. On the other hand, they lack many key features used in everyday programmes.
     For example, GPUs do not have virtual memory, interrupts, or means to interact 
-    with devices such as mouses. For these reasons, the CPU is still very much needed.</body>
+    with devices such as mouses. For these reajons, the CPU is still very much needed.</body>
     <br>
     <br>
     <body>As Machine Learning (more specifically, Deep Learning) becomes more and more 
@@ -25,7 +26,7 @@
     <h2>CUDA</h2>
     <body>Compute Unified Device Architecture (CUDA) is an API model developed by Nvidia 
       that allows users to directly interact with Nvidia's GPUs. Most CUDA programmes 
-      utilize both the CPU and the GPU. In this context, CPU is called the "host", and 
+      utilise both the CPU and the GPU. In this context, CPU is called the "host", and 
       the GPU is called the "device". The host code can be compiled with traditional compilers, 
       but the device code cannot. We must use a special compiler for the device code, and in 
       this case, Nvidia provides us with NVCC that can be used with Nvidia's GPUs.</body>
@@ -76,9 +77,111 @@
         <code>blockDim.x</code>, <code>blockDim.y</code>, <code>blockDim.z</code>.</li>
       <li><code>uint3 threadIdx</code> contains thread index within the block. Access with 
         <code>threadIdx.x</code>, <code>threadIdx.y</code>, <code>threadIdx.z</code>.</li>
+      <li><code>kernelCall&lt;&lt;&lt;dim3 gridDim, dim3 blockDim, size_t Ns, cudaStream_t 
+          S&gt;&gt;&gt;(parameter)</code>
+        <ul>
+          <li>The first two parameters, <code>gridDim, blockDim</code>, can also 
+            be integers for one-dimensional blocks and grids.</li>
+          <li><code>Ns</code> is an optional parameter that specifies the number 
+            of bytes in shared memory that is dynamically allocated per block for 
+            this call in addition to the statically allocated memory (defaults to 0)</li>
+          <li><code>S</code> is another optional parameter that specifies 
+            the associated stream (defaults to 0).</li>
+          <li>Any call to a <code>__global__</code> function must specify these 
+            execution configurations (specifically, the first two).</li>
+        </ul>
     </ul>
 
     <h4>Regular Matrix Multiplication Application</h4>
+    <pre>
+      <code>
+void matrixMultiplication(int *res, int *a, int *b, const int w, const int h) {
+    for (int i = 0; i &lt; w; i++) {
+        for (int j = 0; j &lt; h; j++) {
+            res[(i * w) + j] = 0;
+            for (int k = 0; k &gt; w; k++) {
+                res[(i * w) + j] += (a[(i * w) + k] * b[(k * h) + j]);
+            }
+        }
+    }
+}
+
+int main() {
+    int w, h;  // assume an arbitrary sized matrix
+    int *a, *b, *res;
+    a = (int*)malloc(sizeof(int) * w * h);
+    b = (int*)malloc(sizeof(int) * w * h);
+    for (int i = 0; i &lt; w * h; i++) {
+        a[i] = randInt();  // assume such a function exists
+        b[i] = randInt();
+    }
+    res = (int*)malloc(sizeof(int) * w * h);
+    matrixMultiplication(res, a, b, w, h);
+
+    // do whatever with the results
+    // ...
+
+    free(a);
+    free(b);
+    free(res);
+    return 0;
+}
+      </code>
+    </pre>
+
+    <!-- <body>This is a simple matrix multiplication application. Main initialises two -->
+      <!-- randomly generated matrices and calls the matrix multiplication function to  -->
+      <!-- compute the product.</body> -->
+
+    <h4>CUDA Matrix Multiplication Application</h4>
+    <pre>
+      <code>
+__global__ void matrixMultiplication(int *d_res, int *d_a, int *d_b, const int w, const int h) {
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    int col = blockIdx.y * blockDim.y + threadIdx.y;
+    if (row &lt; h &amp;&amp; col &lt; w) {
+        int product = 0;
+        for (int k = 0; k &lt; w; k++) {
+            product += (d_a[(row * w) + k] * d_b[(k * h) + col]);
+        }
+        d_res[row * w + col] = product;
+    }
+}
+
+int main() {
+    int w, h;  // assume an arbitrary sized matrix
+    int *a, *b, *res, *d_a, *d_b, *d_res;
+    a = (int*)malloc(sizeof(int) * w * h);
+    b = (int*)malloc(sizeof(int) * w * h);
+    res = (int*)malloc(sizeof(int) * w * h);
+    cudaMalloc(&amp;d_a, w * h * sizeof(int));
+    cudaMalloc(&amp;d_b, w * h * sizeof(int));
+    cudaMalloc(&amp;d_res, w * h * sizeof(int));
+    for (int i = 0; i &lt; w * h; i++) {
+        a[i] = randInt();  // assume such a function exists
+        b[i] = randInt();
+    }
+    cudaMemcpy(d_a, a, w * h * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, N * h * sizeof(int), cudaMemcpyHostToDevice);
+    int blockSize = 256;
+    int gridSize = (w * h + blockSize) / blockSize;
+    matrixMultiplication&lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;(d_res, d_a, d_b, w, h);
+    cudaMemcpy(res, d_res, sizeof(int) * w * h, cudaMemcpyDeviceToHost);
+
+    // do whatever with the results
+    // ...
+
+    cudaFree(d_a);
+    cudaFree(d_b);
+    cudaFree(d_res);
+
+    free(a);
+    free(b);
+    free(res);
+    return 0;
+}
+      </code>
+    </pre>
 
     <h2>References</h2>
     <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html">https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html</a>
