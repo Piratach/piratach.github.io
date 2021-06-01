@@ -54,6 +54,12 @@
       that particular grid. This is particularly useful to think about when running 
       applications that works with images, or something similar.</body>
 
+    <h3>Unified Memory</h3>
+    <body>To avoid having to go through all the work of allocating memory on both 
+    host and device, and having to transfer data between the two locations, unified 
+    memory can be used instead. Data allocated in the unified memory will allow both 
+    the GPU and CPU to have access to it, but synchronisation issues may occur.</body>
+
     <h3>CUDA in C</h3>
 
     <h4>Some Functions and Keywords</h4>
@@ -69,6 +75,10 @@
         flag. The <code>kind</code> values are chosen from <code>cudaMemcpyHostToHost, 
         cudaMemcpyHostToDevice, cudaMemcpyDeviceToHost, cudaMemcpyDeviceToDevice, 
         cudaMemcpyDefault</code>. The default flag requires unified virtual addressing.</li>
+      <li><code>cudaMallocManaged(void **d_A, size_t s)</code> to allocate memory of size <code>s</code> 
+      in unified memory, which is accessible by both the CPU and GPUs.</li>
+      <li><code>cudaDeviceSynchronize(void)</code> is called to wait until kernel runs to completion 
+      to avoid synchronisation issues between the GPU and the CPU.</li>
       <li><code>dim3 gridDim</code> contains dimensions of the grid. Access with 
         <code>gridDim.x</code>, <code>gridDim.y</code>, <code>gridDim.z</code>.</li>
       <li><code>uint3 blockIdx</code> contains block ID within the grid. Access with 
@@ -133,7 +143,7 @@ int main() {
       <!-- randomly generated matrices and calls the matrix multiplication function to  -->
       <!-- compute the product.</body> -->
 
-    <h4>CUDA Matrix Multiplication Application</h4>
+    <h4>CUDA Matrix Multiplication Application (Regular Memory)</h4>
     <pre>
       <code>
 __global__ void matrixMultiplication(int *d_res, int *d_a, int *d_b, const int w, const int h) {
@@ -182,6 +192,49 @@ int main() {
 }
       </code>
     </pre>
+
+        <h4>CUDA Matrix Multiplication Application (Unified Memory)</h4>
+    <pre>
+      <code>
+__global__ void matrixMultiplication(int *d_res, int *d_a, int *d_b, const int w, const int h) {
+    int row = blockIdx.x * blockDim.x + threadIdx.x;
+    int col = blockIdx.y * blockDim.y + threadIdx.y;
+    if (row &lt; h &amp;&amp; col &lt; w) {
+        int product = 0;
+        for (int k = 0; k &lt; w; k++) {
+            product += (d_a[(row * w) + k] * d_b[(k * h) + col]);
+        }
+        d_res[row * w + col] = product;
+    }
+}
+
+int main() {
+    int w, h;  // assume an arbitrary sized matrix
+    int *a, *b, *res;
+    cudaMallocManaged(&amp;a, w * h * sizeof(int));
+    cudaMallocManaged(&amp;b, w * h * sizeof(int));
+    cudaMallocManaged(&amp;res, w * h * sizeof(int));
+    for (int i = 0; i &lt; w * h; i++) {
+        a[i] = randInt();  // assume such a function exists
+        b[i] = randInt();
+    }
+    int blockSize = 256;
+    int gridSize = (w * h + blockSize) / blockSize;
+    matrixMultiplication&lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;(res, a, b, w, h);
+
+    cudaDeviceSynchronize();  // to avoid race issues
+    // do whatever with the results
+    // ...
+
+    cudaFree(a);
+    cudaFree(b);
+    cudaFree(res);
+
+    return 0;
+}
+      </code>
+    </pre>
+
 
     <h2>References</h2>
     <a href="https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html">https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html</a>
