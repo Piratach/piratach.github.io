@@ -15,7 +15,7 @@
     Therefore, they are best for data intensive applications, preferably parallel 
     ones. On the other hand, they lack many key features used in everyday programmes.
     For example, GPUs do not have virtual memory, interrupts, or means to interact 
-    with devices such as mouses. For these reajons, the CPU is still very much needed.</body>
+    with devices such as mouses. For these reasons, the CPU is still very much needed.</body>
     <br>
     <br>
     <body>As Machine Learning (more specifically, Deep Learning) becomes more and more 
@@ -193,6 +193,12 @@ int main() {
       </code>
     </pre>
 
+    <body>This application follows the general structure noted above. One important thing 
+      to note is that the <code>blockSize</code> is chosen arbitrarily (a multiple of four 
+      is preferred), and the <code>gridSize</code> is calculated based on how many blocks 
+      are needed for there to be one thread per each matrix element. Therefore, the ceiling 
+      of <code>(w * h)/blockSize</code> is chosen.</body>
+
         <h4>CUDA Matrix Multiplication Application (Unified Memory)</h4>
     <pre>
       <code>
@@ -234,6 +240,13 @@ int main() {
 }
       </code>
     </pre>
+
+    <body>The only difference from the previous code is that instead of having 
+    to allocate memory on both the CPU and the GPU and transfer data between the two, 
+    we only have to allocate once in unified memory. One thing to note is before 
+    using the results from the kernel further, we must make sure the kernel has finished 
+    running completely to avoid race conditions, which is why 
+    <code>cudaDeviceSynchronize()</code> is needed.</body>
 
 
     <h2>References</h2>
