@@ -172,7 +172,7 @@ int main() {
         b[i] = randInt();
     }
     cudaMemcpy(d_a, a, w * h * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, N * h * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, w * h * sizeof(int), cudaMemcpyHostToDevice);
     int blockSize = 256;
     int gridSize = (w * h + blockSize) / blockSize;
     matrixMultiplication&lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;(d_res, d_a, d_b, w, h);
