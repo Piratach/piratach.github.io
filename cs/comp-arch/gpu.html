@@ -109,7 +109,7 @@ void matrixMultiplication(int *res, int *a, int *b, const int w, const int h) {
     for (int i = 0; i &lt; w; i++) {
         for (int j = 0; j &lt; h; j++) {
             res[(i * w) + j] = 0;
-            for (int k = 0; k &gt; w; k++) {
+            for (int k = 0; k &lt; w; k++) {
                 res[(i * w) + j] += (a[(i * w) + k] * b[(k * h) + j]);
             }
         }
