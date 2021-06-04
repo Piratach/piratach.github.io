@@ -44,7 +44,7 @@
     <h3>Thread Organisation</h3>
     <body>A function is executed by threads in the same grid. In CUDA, a grid is 
       comprised of blocks, and a block is comprised of many threads. Both blocks 
-      and grids are 3D by nature, but one can specify the third dimension to be 1 
+      and grids are 3D by nature, but one can simply just specify two arguments 
       to keep it 2D. For simplicity, only consider 2D blocks and grids for now. 
       One block consists of many different threads. If a block is 16x16 (represented as 
       16x16x1 in CUDA), then that means there are 16 threads in each row, and 16 rows
@@ -52,7 +52,8 @@
       if a grid is 5x5, then there are 5 blocks in each row, and 5 rows in total for each 
       block, resulting in 25 blocks in a grid. This means there are 256 * 25 threads in 
       that particular grid. This is particularly useful to think about when running 
-      applications that works with images, or something similar.</body>
+      applications that works with images, or something similar. Otherwise, it is simpler 
+      to keep it 1D.</body>
 
     <h3>Unified Memory</h3>
     <body>To avoid having to go through all the work of allocating memory on both 
@@ -79,12 +80,14 @@
       in unified memory, which is accessible by both the CPU and GPUs.</li>
       <li><code>cudaDeviceSynchronize(void)</code> is called to wait until kernel runs to completion 
       to avoid synchronisation issues between the GPU and the CPU.</li>
-      <li><code>dim3 gridDim</code> contains dimensions of the grid. Access with 
-        <code>gridDim.x</code>, <code>gridDim.y</code>, <code>gridDim.z</code>.</li>
+      <li><code>dim3 gridDim</code> contains dimensions of the grid. Each entry within 
+        the grid contains a block. Access with <code>gridDim.x</code>, 
+        <code>gridDim.y</code>, <code>gridDim.z</code>.</li>
       <li><code>uint3 blockIdx</code> contains block ID within the grid. Access with 
         <code>blockIdx.x</code>, <code>blockIdx.y</code>, <code>blockIdx.z</code>.</li>
-      <li><code>dim3 blockDim</code> contains dimensions of the block. Access with 
-        <code>blockDim.x</code>, <code>blockDim.y</code>, <code>blockDim.z</code>.</li>
+      <li><code>dim3 blockDim</code> contains dimensions of the block. Each entry within 
+        the block contains a thread. Access with <code>blockDim.x</code>, 
+        <code>blockDim.y</code>, <code>blockDim.z</code>.</li>
       <li><code>uint3 threadIdx</code> contains thread index within the block. Access with 
         <code>threadIdx.x</code>, <code>threadIdx.y</code>, <code>threadIdx.z</code>.</li>
       <li><code>kernelCall&lt;&lt;&lt;dim3 gridDim, dim3 blockDim, size_t Ns, cudaStream_t 
@@ -174,8 +177,9 @@ int main() {
     cudaMemcpy(d_a, a, w * h * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, b, w * h * sizeof(int), cudaMemcpyHostToDevice);
     int blockSize = 256;
-    int gridSize = (w * h + blockSize) / blockSize;
-    matrixMultiplication&lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;(d_res, d_a, d_b, w, h);
+    dim3 dimBlock(blockSize, blockSize);
+    dim3 dimGrid((w / blockSize) + 1, (h / blockSize) + 1);
+    matrixMultiplication&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(d_res, d_a, d_b, w, h);
     cudaMemcpy(res, d_res, sizeof(int) * w * h, cudaMemcpyDeviceToHost);
 
     // do whatever with the results
@@ -225,8 +229,9 @@ int main() {
         b[i] = randInt();
     }
     int blockSize = 256;
-    int gridSize = (w * h + blockSize) / blockSize;
-    matrixMultiplication&lt;&lt;&lt;gridSize, blockSize&gt;&gt;&gt;(res, a, b, w, h);
+    dim3 dimBlock(blockSize, blockSize);
+    dim3 dimGrid((w / blockSize) + 1, (h / blockSize) + 1);
+    matrixMultiplication&lt;&lt;&lt;dimGrid, dimBlock&gt;&gt;&gt;(res, a, b, w, h);
 
     cudaDeviceSynchronize();  // to avoid race issues
     // do whatever with the results
@@ -255,6 +260,8 @@ int main() {
     <a href="https://www.tutorialspoint.com/cuda/index.htm">https://www.tutorialspoint.com/cuda/index.htm</a>
     <br>
     <a href="https://github.com/puttsk/cuda-tutorial">https://github.com/puttsk/cuda-tutorial</a>
+    <br>
+    <a href="http://www.shodor.org/media/content//petascale/materials/UPModules/matrixMultiplication/moduleDocument.pdf">http://www.shodor.org/media/content//petascale/materials/UPModules/matrixMultiplication/moduleDocument.pdf
 
     <hr style="height:3px;border-width:0;color:gray;background-color:black">
     <a href="../../cs">Other CS stuff</a>
